@@ -299,7 +299,7 @@ function getActiveAlerts(){
     let lastDay = new Date(year, month + 1, 0).getDate();
 
     if((date === lastDay && hours >= 22) || (date === 1 && hours < 6)){
-        alerts.push("Reset Totalizers & Pump Running hours with Blending Silo changeover at 6AM");
+        alerts.push("Reset Totalizers & Pump Running hours<br>along with Blending Silo changeover at 6AM");
     }
 
     // 🔴 2. Attendance Alert (20th → 21st full day)
