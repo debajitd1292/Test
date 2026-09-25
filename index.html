@@ -629,15 +629,60 @@ function renderTraining(){
         return;
     }
 
-    filtered.forEach(t=>{
-        box.innerHTML += `
-        <div class="training-item">
-            <div class="training-date">${t.date}</div>
-            <div class="training-name">${t.name}</div>
-            <div class="training-type">${t.type}</div>
-        </div>
-        `;
+    filtered.sort((a,b)=>{
+        let da = a.date.split("to")[0].trim();
+        let db = b.date.split("to")[0].trim();
+
+        let [d1,m1] = da.split("-");
+        let [d2,m2] = db.split("-");
+
+        return new Date(2025,m1-1,d1) - new Date(2025,m2-1,d2);
     });
+
+    let today = new Date();
+    today.setHours(0,0,0,0);
+
+    filtered.forEach(t=>{
+
+    // --- extract start & end date ---
+    let parts = t.date.split("to").map(x=>x.trim());
+
+    let [sd, sm] = parts[0].split("-");
+    let startDate = new Date(today.getFullYear(), sm-1, sd);
+
+    let endDate = startDate;
+
+    if(parts.length > 1){
+        let [ed, em] = parts[1].split("-");
+        endDate = new Date(today.getFullYear(), em-1, ed);
+    }
+
+    // --- status check ---
+    let isPast = endDate < today;
+    let isToday = (startDate <= today && endDate >= today);
+
+    // --- styling ---
+    let style = "";
+    if(isPast){
+        style = "opacity:0.5;";
+    }
+
+    box.innerHTML += `
+    <div class="training-item" style="${style}">
+        
+        <!-- Line 1 -->
+        <div class="training-name" style="font-weight:bold;">
+            ${t.date} — ${t.name}
+        </div>
+
+        <!-- Line 2 -->
+        <div class="training-type">
+            ${t.type}
+        </div>
+
+    </div>
+    `;
+});
 }
 
 function onNameChange(){
