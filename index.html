@@ -798,22 +798,23 @@ function renderTraining(){
 
     // --- styling ---
     let style = "";
+    let textStyle = "";
+
     if(isPast){
-        style = "opacity:0.5;";
+    style = "opacity:0.7;";
+    textStyle = "opacity:0.7;";
     }
 
     box.innerHTML += `
     <div class="training-item" style="${style}">
-        
-        <!-- Line 1 -->
-        <div class="training-name" style="font-weight:bold;">
-            ${t.date} — ${t.name}
-        </div>
+    
+    <div class="training-name" style="font-weight:bold; ${textStyle}">
+        ${t.date} — ${t.name}
+    </div>
 
-        <!-- Line 2 -->
-        <div class="training-type">
-            ${t.type}
-        </div>
+    <div class="training-type" style="${textStyle}">
+        ${t.type}
+    </div>
 
     </div>
     `;
