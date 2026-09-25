@@ -9,12 +9,7 @@
 <meta name="theme-color" content="#0d47a1">
 
 <style>
-body { 
-    font-family: Arial; 
-    margin:0; 
-    background:#eef1f5; 
-    overflow-x: hidden;
-}
+body { font-family: Arial; margin:0; background:#eef1f5; }
 
 .header { 
     background:#1f4e79; 
@@ -26,23 +21,23 @@ body {
     top: 0; 
     z-index: 1000;
 
-    overflow-x: hidden;
+    overflow: hidden; 
 }
 
 .holiday-text {
-    font-size: 13px;
+    font-size: 13px;   /* change as needed */
 }
 
 .logo { 
     width:60px; 
     height:60px; 
-    border-radius:50%;
+    border-radius:50%;              /* perfect circle */ 
     object-fit:cover;
 
-    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);  /* keep premium effect */
 
-    background:transparent;
-    padding:0;
+    background:transparent;         /* no white ring */
+    padding:0;                      /* remove extra spacing */
 
     opacity:0;                      
     transform:scale(0.8);           
@@ -328,7 +323,6 @@ let holidays = [];
 let notes = [];
 let selectedName = "";
 let trainings = [];
-let header = [];
 
 const seniorityOrder = [
 "Saiprasad","Abhigyan","Arshad","Sandip","Shashank","Debajit",
@@ -353,80 +347,27 @@ function sortBySeniority(list){
     });
 }
 
-Promise.allSettled([
-    fetch(shiftUrl).then(r=>r.text()),
-    fetch(holidayUrl).then(r=>r.text()),
-    fetch(notesUrl).then(r=>r.text()),
-    fetch(trainingUrl).then(r=>r.text())
-]).then(results => {
+Promise.all([
+fetch(shiftUrl).then(r=>r.text()),
+fetch(holidayUrl).then(r=>r.text()),
+fetch(notesUrl).then(r=>r.text()),
+fetch(trainingUrl).then(r=>r.text())
+]).then(([shiftText,holidayText,notesText,trainingText])=>{
 
-    // 🔹 SHIFT DATA (MOST IMPORTANT)
-    if(results[0].status === "fulfilled"){
-        let shiftText = results[0].value;
+data = shiftText.split("\n").map(r=>r.replace(/\r/g,"").split(/[,;]/));
 
-        data = shiftText.split("\n").map(r=>r.replace(/\r/g,"").split(/[,;]/));
-        header = data[0].map(x => x.trim());
-    } else {
-        console.error("Shift data failed to load");
-    }
+holidays = holidayText.split("\n").slice(1).map(r=>{
+let [d,t,n]=r.replace(/\r/g,"").split(/[,;]/);
+return {date:d?.trim(),type:t?.trim(),name:n?.trim()};
+});
 
-    // 🔹 HOLIDAYS
-    if(results[1].status === "fulfilled"){ 
-    let holidayText = results[1].value; 
-
-    holidays = holidayText.split("\n").slice(1).map(r=>{ 
-        let [d,t,n]=r.replace(/\r/g,"").split(/[,;]/); 
-        return { 
-            date:d?.trim(), 
-            type:t?.trim(), 
-            name:n?.trim() 
-        }; 
-    });
-
-    holidayMap = new Map();
-    holidays.forEach(h=>{
-        holidayMap.set(h.date + "_" + h.type, true);
-    });
-
-    } else { 
-    console.error("Holiday data failed to load"); 
-    }
-
-    // 🔹 NOTES
-    if(results[2].status === "fulfilled"){
-        let notesText = results[2].value;
-
-        notes = notesText.split("\n").slice(1).map(r=>{
-            let [d,t,n,m]=r.replace(/\r/g,"").split(/[,;]/);
-            return {
-                date:d?.trim(),
-                type:t?.trim(),
-                name:n?.trim(),
-                message:m?.trim()
-            };
-        });
-    } else {
-        console.error("Notes data failed to load");
-    }
-
-    // 🔹 TRAININGS
-    if(results[3].status === "fulfilled"){
-        let trainingText = results[3].value;
-
-        trainings = trainingText.split("\n").slice(1).map(r=>{
-            let [d,n,t]=r.replace(/\r/g,"").split(/[,;]/);
-            return {
-                date: d?.trim(),
-                name: n?.trim(),
-                type: t?.trim()
-            };
-        });
-    } else {
-        console.error("Training data failed to load");
-    }
-
-    // 🔹 INIT APP
-    init();
+trainings = trainingText.split("\n").slice(1).map(r=>{
+let [d,n,t]=r.replace(/\r/g,"").split(/[,;]/);
+return {
+    date: d?.trim(),
+    name: n?.trim(),
+    type: t?.trim()
+};
 });
 
 notes = notesText.split("\n").slice(1).map(r=>{
@@ -480,8 +421,13 @@ if(day === 6){
 /* GH check */
 let todayStr = formatDate(today);
 
-let isGH = holidayMap.has(todayStr + "_GH");
-let isRH = holidayMap.has(todayStr + "_RH");
+let isGH = holidays.some(h => 
+    h.date === todayStr && h.type === "GH"
+);
+
+let isRH = holidays.some(h => 
+    h.date === todayStr && h.type === "RH"
+);
 
 if(isGH || isRH) return true;
 
@@ -674,28 +620,19 @@ render("today", today);
 }
 
 function getShift(date,name){
+let header=data[0].map(x=>x.trim());
 let col = header.indexOf(date);
 if(col === -1) return null;
 
 for(let i=1;i<data.length;i++){
 if(data[i][0]?.trim()===name){
 return data[i][col]?.trim() || null;
-    }
 }
-return null;
 }
-
-function parseShift(shift){
-    if(!shift) return [];
-
-    shift = shift.trim();
-
-    if(shift === "OFF") return ["OFF"];
-
-    return shift.match(/[A-Z]/g) || [];
 }
 
 function getData(date){
+let header=data[0].map(x=>x.trim());
 let col = header.indexOf(date);
 if(col === -1) return {};
 let shifts={};
@@ -714,9 +651,9 @@ continue;
 
 let isMulti = shift.length>1;
 
-parseShift(shift).forEach(s=>{
-    if(!shifts[s]) shifts[s]=[];
-    shifts[s].push({name:name,multi:isMulti});
+shift.replace(/[^A-Z]/g,"").split("").forEach(s=>{
+if(!shifts[s]) shifts[s]=[];
+shifts[s].push({name:name,multi:isMulti});
 });
 }
 return shifts;
@@ -726,6 +663,8 @@ function render(id,date){
 
 let box=document.getElementById(id);
 box.innerHTML="";
+
+let header=data[0].map(x=>x.trim());
 
 if(header.indexOf(date)===-1){
 
@@ -747,15 +686,8 @@ let shifts=getData(date);
 
 let list=shifts[s]||[];
 
-list.sort((a,b)=>{
-    let ia = seniorityOrder.indexOf(a.name);
-    let ib = seniorityOrder.indexOf(b.name);
-
-    if(ia === -1) ia = 999;
-    if(ib === -1) ib = 999;
-
-    return ia - ib;
-});
+list = sortBySeniority(list.map(x=>x.name))
+       .map(n => list.find(x=>x.name===n));
 
 let alert=(["A","B","C"].includes(s)&&list.length<=2)?" ❗":"";
 
@@ -773,15 +705,8 @@ box.innerHTML+=`<div class="shift-title">${shiftLabels[s]} (${list.length})${ale
 let list=shifts[s]||[];
 if(list.length===0) return;
 
-list.sort((a,b)=>{
-    let ia = seniorityOrder.indexOf(a.name);
-    let ib = seniorityOrder.indexOf(b.name);
-
-    if(ia === -1) ia = 999;
-    if(ib === -1) ib = 999;
-
-    return ia - ib;
-});
+list = sortBySeniority(list.map(x=>x.name))
+       .map(n => list.find(x=>x.name===n));
 
 let chips=list.map(obj=>{
 let sel=(selectedName && obj.name===selectedName)?"selected":"";
@@ -846,14 +771,12 @@ function renderTraining(){
         let [d1,m1] = da.split("-");
         let [d2,m2] = db.split("-");
 
-        let year = new Date().getFullYear();
-        return new Date(year, m1-1, d1) - new Date(year, m2-1, d2);
+        return new Date(2025,m1-1,d1) - new Date(2025,m2-1,d2);
     });
 
     let today = new Date();
     today.setHours(0,0,0,0);
 
-    let html = ""; 
     filtered.forEach(t=>{
 
     // --- extract start & end date ---
@@ -879,7 +802,7 @@ function renderTraining(){
         style = "opacity:0.5;";
     }
 
-    html += `
+    box.innerHTML += `
     <div class="training-item" style="${style}">
         
         <!-- Line 1 -->
@@ -895,7 +818,6 @@ function renderTraining(){
     </div>
     `;
 });
-box.innerHTML = html;
 }
 
 function onNameChange(){
