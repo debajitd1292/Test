@@ -21,15 +21,18 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
     top: 0; 
     z-index: 1000;
 
-    overflow: hidden; 
+    overflow: hidden;
+
+    transition: all 0.3s ease; 
 }
 
 .header.compact {
-    padding: 6px 10px;
+    padding: 8px 10px;
 }
 
 .header.compact .logo {
-    display: none;
+    transform: scale(0.7);
+    opacity: 0.7;
 }
 
 .header.compact h3 {
@@ -596,7 +599,7 @@ window.addEventListener("scroll", function() {
     let header = document.querySelector(".header");
     let currentScroll = window.scrollY;
 
-    if(currentScroll > 50){
+    if(currentScroll > 80){
         header.classList.add("compact");
     } else {
         header.classList.remove("compact");
