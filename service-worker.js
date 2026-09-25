@@ -1,54 +1,75 @@
-const CACHE_NAME = "ppu-test-cache-v11";
+const CACHE_NAME = "ppu-dashboard-v8";
 
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./shift.csv",
-  "./holiday.csv",
-  "./notes.csv",
-  "./logo.png",
-  "./manifest.json"
+const urlsToCache = [
+    "./",
+    "./index.html",
+    "./manifest.json",
+    "./service-worker.js",
+    "https://raw.githubusercontent.com/debajitd1292/ppu/main/logo.png"
 ];
 
-// Install - cache files
+// INSTALL
 self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
-});
+    self.skipWaiting();
 
-// Activate - clean old cache
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-// Fetch - network first, fallback to cache
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Update cache dynamically
-        const resClone = response.clone();
+    event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, resClone);
-        });
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
-  );
+            return Promise.allSettled(
+                urlsToCache.map(url => cache.add(url))
+            );
+        })
+    );
+});
+
+// ACTIVATE
+self.addEventListener("activate", event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        }).then(() => self.clients.claim())
+    );
+});
+
+// FETCH
+self.addEventListener("fetch", event => {
+
+    const url = event.request.url;
+
+    // ✅ Always fetch fresh CSV (dynamic data)
+    if (url.includes(".csv")) {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // ✅ Navigation fallback
+    if (event.request.mode === "navigate") {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match("./index.html"))
+        );
+        return;
+    }
+
+    // ✅ Cache-first for static assets
+    event.respondWith(
+        caches.match(event.request).then(cached => {
+
+            return cached || fetch(event.request).then(response => {
+
+                if (response && response.status === 200) {
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, response.clone());
+                    });
+                }
+
+                return response;
+            });
+
+        })
+    );
 });

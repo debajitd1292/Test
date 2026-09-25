@@ -9,7 +9,12 @@
 <meta name="theme-color" content="#0d47a1">
 
 <style>
-body { font-family: Arial; margin:0; background:#eef1f5; }
+body { 
+    font-family: Arial; 
+    margin:0; 
+    background:#eef1f5; 
+    overflow-x: hidden;
+}
 
 .header { 
     background:#1f4e79; 
@@ -21,43 +26,23 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
     top: 0; 
     z-index: 1000;
 
-    overflow: hidden;
-
-    transition: all 0.3s ease; 
-}
-
-.header.compact {
-    padding: 8px 10px;
-}
-
-.header.compact .logo {
-    transform: scale(0.7);
-    opacity: 0.7;
-}
-
-.header.compact h3 {
-    font-size: 16px;
-}
-
-.header.compact .badge {
-    font-size: 12px;
-    padding: 4px 10px;
+    overflow-x: hidden;
 }
 
 .holiday-text {
-    font-size: 13px;   /* change as needed */
+    font-size: 13px;
 }
 
 .logo { 
     width:60px; 
     height:60px; 
-    border-radius:50%;              /* perfect circle */ 
+    border-radius:50%;
     object-fit:cover;
 
-    box-shadow:0 2px 8px rgba(0,0,0,0.3);  /* keep premium effect */
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
 
-    background:transparent;         /* no white ring */
-    padding:0;                      /* remove extra spacing */
+    background:transparent;
+    padding:0;
 
     opacity:0;                      
     transform:scale(0.8);           
@@ -343,6 +328,7 @@ let holidays = [];
 let notes = [];
 let selectedName = "";
 let trainings = [];
+let header = [];
 
 const seniorityOrder = [
 "Saiprasad","Abhigyan","Arshad","Sandip","Shashank","Debajit",
@@ -367,27 +353,80 @@ function sortBySeniority(list){
     });
 }
 
-Promise.all([
-fetch(shiftUrl).then(r=>r.text()),
-fetch(holidayUrl).then(r=>r.text()),
-fetch(notesUrl).then(r=>r.text()),
-fetch(trainingUrl).then(r=>r.text())
-]).then(([shiftText,holidayText,notesText,trainingText])=>{
+Promise.allSettled([
+    fetch(shiftUrl).then(r=>r.text()),
+    fetch(holidayUrl).then(r=>r.text()),
+    fetch(notesUrl).then(r=>r.text()),
+    fetch(trainingUrl).then(r=>r.text())
+]).then(results => {
 
-data = shiftText.split("\n").map(r=>r.replace(/\r/g,"").split(/[,;]/));
+    // 🔹 SHIFT DATA (MOST IMPORTANT)
+    if(results[0].status === "fulfilled"){
+        let shiftText = results[0].value;
 
-holidays = holidayText.split("\n").slice(1).map(r=>{
-let [d,t,n]=r.replace(/\r/g,"").split(/[,;]/);
-return {date:d?.trim(),type:t?.trim(),name:n?.trim()};
-});
+        data = shiftText.split("\n").map(r=>r.replace(/\r/g,"").split(/[,;]/));
+        header = data[0].map(x => x.trim());
+    } else {
+        console.error("Shift data failed to load");
+    }
 
-trainings = trainingText.split("\n").slice(1).map(r=>{
-let [d,n,t]=r.replace(/\r/g,"").split(/[,;]/);
-return {
-    date: d?.trim(),
-    name: n?.trim(),
-    type: t?.trim()
-};
+    // 🔹 HOLIDAYS
+    if(results[1].status === "fulfilled"){ 
+    let holidayText = results[1].value; 
+
+    holidays = holidayText.split("\n").slice(1).map(r=>{ 
+        let [d,t,n]=r.replace(/\r/g,"").split(/[,;]/); 
+        return { 
+            date:d?.trim(), 
+            type:t?.trim(), 
+            name:n?.trim() 
+        }; 
+    });
+
+    holidayMap = new Map();
+    holidays.forEach(h=>{
+        holidayMap.set(h.date + "_" + h.type, true);
+    });
+
+    } else { 
+    console.error("Holiday data failed to load"); 
+    }
+
+    // 🔹 NOTES
+    if(results[2].status === "fulfilled"){
+        let notesText = results[2].value;
+
+        notes = notesText.split("\n").slice(1).map(r=>{
+            let [d,t,n,m]=r.replace(/\r/g,"").split(/[,;]/);
+            return {
+                date:d?.trim(),
+                type:t?.trim(),
+                name:n?.trim(),
+                message:m?.trim()
+            };
+        });
+    } else {
+        console.error("Notes data failed to load");
+    }
+
+    // 🔹 TRAININGS
+    if(results[3].status === "fulfilled"){
+        let trainingText = results[3].value;
+
+        trainings = trainingText.split("\n").slice(1).map(r=>{
+            let [d,n,t]=r.replace(/\r/g,"").split(/[,;]/);
+            return {
+                date: d?.trim(),
+                name: n?.trim(),
+                type: t?.trim()
+            };
+        });
+    } else {
+        console.error("Training data failed to load");
+    }
+
+    // 🔹 INIT APP
+    init();
 });
 
 notes = notesText.split("\n").slice(1).map(r=>{
@@ -441,13 +480,8 @@ if(day === 6){
 /* GH check */
 let todayStr = formatDate(today);
 
-let isGH = holidays.some(h => 
-    h.date === todayStr && h.type === "GH"
-);
-
-let isRH = holidays.some(h => 
-    h.date === todayStr && h.type === "RH"
-);
+let isGH = holidayMap.has(todayStr + "_GH");
+let isRH = holidayMap.has(todayStr + "_RH");
 
 if(isGH || isRH) return true;
 
@@ -591,21 +625,6 @@ if(alerts.length > 0){
 refresh();
 calcHoliday();
 renderTraining();
-
-let lastScroll = 0;
-
-window.addEventListener("scroll", function() {
-
-    let header = document.querySelector(".header");
-    let currentScroll = window.scrollY;
-
-    if(currentScroll > 80){
-        header.classList.add("compact");
-    } else {
-        header.classList.remove("compact");
-    }
-
-});
 }
 
 function populateNames(){
@@ -655,19 +674,28 @@ render("today", today);
 }
 
 function getShift(date,name){
-let header=data[0].map(x=>x.trim());
 let col = header.indexOf(date);
 if(col === -1) return null;
 
 for(let i=1;i<data.length;i++){
 if(data[i][0]?.trim()===name){
 return data[i][col]?.trim() || null;
+    }
 }
+return null;
 }
+
+function parseShift(shift){
+    if(!shift) return [];
+
+    shift = shift.trim();
+
+    if(shift === "OFF") return ["OFF"];
+
+    return shift.match(/[A-Z]/g) || [];
 }
 
 function getData(date){
-let header=data[0].map(x=>x.trim());
 let col = header.indexOf(date);
 if(col === -1) return {};
 let shifts={};
@@ -686,9 +714,9 @@ continue;
 
 let isMulti = shift.length>1;
 
-shift.replace(/[^A-Z]/g,"").split("").forEach(s=>{
-if(!shifts[s]) shifts[s]=[];
-shifts[s].push({name:name,multi:isMulti});
+parseShift(shift).forEach(s=>{
+    if(!shifts[s]) shifts[s]=[];
+    shifts[s].push({name:name,multi:isMulti});
 });
 }
 return shifts;
@@ -698,8 +726,6 @@ function render(id,date){
 
 let box=document.getElementById(id);
 box.innerHTML="";
-
-let header=data[0].map(x=>x.trim());
 
 if(header.indexOf(date)===-1){
 
@@ -721,8 +747,15 @@ let shifts=getData(date);
 
 let list=shifts[s]||[];
 
-list = sortBySeniority(list.map(x=>x.name))
-       .map(n => list.find(x=>x.name===n));
+list.sort((a,b)=>{
+    let ia = seniorityOrder.indexOf(a.name);
+    let ib = seniorityOrder.indexOf(b.name);
+
+    if(ia === -1) ia = 999;
+    if(ib === -1) ib = 999;
+
+    return ia - ib;
+});
 
 let alert=(["A","B","C"].includes(s)&&list.length<=2)?" ❗":"";
 
@@ -740,8 +773,15 @@ box.innerHTML+=`<div class="shift-title">${shiftLabels[s]} (${list.length})${ale
 let list=shifts[s]||[];
 if(list.length===0) return;
 
-list = sortBySeniority(list.map(x=>x.name))
-       .map(n => list.find(x=>x.name===n));
+list.sort((a,b)=>{
+    let ia = seniorityOrder.indexOf(a.name);
+    let ib = seniorityOrder.indexOf(b.name);
+
+    if(ia === -1) ia = 999;
+    if(ib === -1) ib = 999;
+
+    return ia - ib;
+});
 
 let chips=list.map(obj=>{
 let sel=(selectedName && obj.name===selectedName)?"selected":"";
@@ -806,12 +846,14 @@ function renderTraining(){
         let [d1,m1] = da.split("-");
         let [d2,m2] = db.split("-");
 
-        return new Date(2025,m1-1,d1) - new Date(2025,m2-1,d2);
+        let year = new Date().getFullYear();
+        return new Date(year, m1-1, d1) - new Date(year, m2-1, d2);
     });
 
     let today = new Date();
     today.setHours(0,0,0,0);
 
+    let html = ""; 
     filtered.forEach(t=>{
 
     // --- extract start & end date ---
@@ -833,27 +875,27 @@ function renderTraining(){
 
     // --- styling ---
     let style = "";
-    let textStyle = "";
-
     if(isPast){
-    style = "opacity:0.7;";
-    textStyle = "opacity:0.7;";
+        style = "opacity:0.5;";
     }
 
-    box.innerHTML += `
+    html += `
     <div class="training-item" style="${style}">
-    
-    <div class="training-name" style="font-weight:bold; ${textStyle}">
-        ${t.date} — ${t.name}
-    </div>
+        
+        <!-- Line 1 -->
+        <div class="training-name" style="font-weight:bold;">
+            ${t.date} — ${t.name}
+        </div>
 
-    <div class="training-type" style="${textStyle}">
-        ${t.type}
-    </div>
+        <!-- Line 2 -->
+        <div class="training-type">
+            ${t.type}
+        </div>
 
     </div>
     `;
 });
+box.innerHTML = html;
 }
 
 function onNameChange(){
