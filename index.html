@@ -11,15 +11,17 @@
 <style>
 body { font-family: Arial; margin:0; background:#eef1f5; }
 
-.header {
-    background:#1f4e79;
-    color:white;
-    text-align:center;
-    padding:15px 10px;
+.header { 
+    background:#1f4e79; 
+    color:white; 
+    text-align:center; 
+    padding:15px 10px; 
 
-    position: sticky;
-    top: 0;
-    z-index: 1000;        /* keeps it above everything */
+    position: sticky; 
+    top: 0; 
+    z-index: 1000;
+
+    position: relative; 
 }
 
 .holiday-text {
@@ -156,15 +158,22 @@ select:focus, input:focus {
 ========================= */
 .theme-switch {
     position:absolute;
-    top:15px;
-    right:15px;
+    top:12px;
+    right:10px;
     width:50px;
     height:26px;
     z-index:2000;
 }
 
 .theme-switch input {
-    display:none;
+    opacity:0;
+    width:100%;
+    height:100%;
+    position:absolute;
+    top:0;
+    left:0;
+    cursor:pointer;
+    z-index:2;
 }
 
 .slider {
