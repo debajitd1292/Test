@@ -24,6 +24,23 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
     overflow: hidden; 
 }
 
+.header.compact {
+    padding: 6px 10px;
+}
+
+.header.compact .logo {
+    display: none;
+}
+
+.header.compact h3 {
+    font-size: 16px;
+}
+
+.header.compact .badge {
+    font-size: 12px;
+    padding: 4px 10px;
+}
+
 .holiday-text {
     font-size: 13px;   /* change as needed */
 }
@@ -571,6 +588,21 @@ if(alerts.length > 0){
 refresh();
 calcHoliday();
 renderTraining();
+
+let lastScroll = 0;
+
+window.addEventListener("scroll", function() {
+
+    let header = document.querySelector(".header");
+    let currentScroll = window.scrollY;
+
+    if(currentScroll > 50){
+        header.classList.add("compact");
+    } else {
+        header.classList.remove("compact");
+    }
+
+});
 }
 
 function populateNames(){
