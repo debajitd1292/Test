@@ -125,6 +125,31 @@ select:focus, input:focus {
     50% { opacity:0; }
     100% { opacity:1; }
 }
+
+.training-item {
+    background:#f8fafc;
+    border-left:4px solid #1f4e79;
+    padding:10px 12px;
+    border-radius:8px;
+    margin-bottom:10px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+
+.training-date {
+    font-weight:bold;
+    color:#1f4e79;
+    font-size:13px;
+}
+
+.training-name {
+    font-size:14px;
+    margin:4px 0;
+}
+
+.training-type {
+    font-size:12px;
+    color:#555;
+}
 </style>
 </head>
 
@@ -148,9 +173,6 @@ select:focus, input:focus {
 </div>
 
 <div class="card">
-    <label>Select Date:</label>
-    <input type="date" id="datePicker" onchange="renderSelected()">
-
     <label>Your Name:</label>
     <select id="nameSelector" onchange="onNameChange()"></select>
 </div>
@@ -165,8 +187,18 @@ select:focus, input:focus {
 </div>
 
 <div class="card">
+    <label>Select Date:</label>
+    <input type="date" id="datePicker" onchange="renderSelected()">
+</div>
+
+<div class="card">
     <h3 id="selectedTitle">SELECTED DATE</h3>
     <div id="selected"></div>
+</div>
+
+<div class="card">
+    <h3>TRAINING SCHEDULED FOR THE MONTH</h3>
+    <div id="trainingSection">Loading...</div>
 </div>
 
 <div class="footer">
@@ -178,11 +210,13 @@ select:focus, input:focus {
 const shiftUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/shift.csv";
 const holidayUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/holiday.csv";
 const notesUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/notes.csv";
+const trainingUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/training.csv";
 
 let data = [];
 let holidays = [];
 let notes = [];
 let selectedName = "";
+let trainings = [];
 
 const seniorityOrder = [
 "Saiprasad","Abhigyan","Arshad","Sandip","Shashank","Debajit",
@@ -210,14 +244,24 @@ function sortBySeniority(list){
 Promise.all([
 fetch(shiftUrl).then(r=>r.text()),
 fetch(holidayUrl).then(r=>r.text()),
-fetch(notesUrl).then(r=>r.text())
-]).then(([shiftText,holidayText,notesText])=>{
+fetch(notesUrl).then(r=>r.text()),
+fetch(trainingUrl).then(r=>r.text())
+]).then(([shiftText,holidayText,notesText,trainingText])=>{
 
 data = shiftText.split("\n").map(r=>r.replace(/\r/g,"").split(/[,;]/));
 
 holidays = holidayText.split("\n").slice(1).map(r=>{
 let [d,t,n]=r.replace(/\r/g,"").split(/[,;]/);
 return {date:d?.trim(),type:t?.trim(),name:n?.trim()};
+});
+
+trainings = trainingText.split("\n").slice(1).map(r=>{
+let [d,n,t]=r.replace(/\r/g,"").split(/[,;]/);
+return {
+    date: d?.trim(),
+    name: n?.trim(),
+    type: t?.trim()
+};
 });
 
 notes = notesText.split("\n").slice(1).map(r=>{
@@ -295,15 +339,15 @@ function getActiveAlerts(){
 
     let alerts = [];
 
-    // 🔴 1. Monthly Reset Alert (Last day 10PM → 1st 6AM)
+    // 🔴 1. Monthly Reset Alert (Last day 2PM → 1st 6AM)
     let lastDay = new Date(year, month + 1, 0).getDate();
 
-    if((date === lastDay && hours >= 22) || (date === 1 && hours < 6)){
-        alerts.push("Reset Totalizers & Pump Running hours<br>along with Blending Silo changeover at 6AM");
+    if((date === lastDay && hours >= 14) || (date === 1 && hours < 6)){
+        alerts.push("Reset Totalizers & Pump Running Hours<br>along with Blending Silo Changeover at 06:00 hrs");
     }
 
-    // 🔴 2. Attendance Alert (20th → 21st full day)
-    if(date === 20 || date === 21){
+    // 🔴 2. Attendance Alert (19th → 21st full day)
+    if(date >= 19 && date <= 21){
         alerts.push("Update/Sign Attendance Register");
     }
 
@@ -391,6 +435,7 @@ if(alerts.length > 0){
 
 refresh();
 calcHoliday();
+renderTraining();
 }
 
 function populateNames(){
@@ -549,6 +594,50 @@ document.getElementById("selectedTitle").innerText =
 "SELECTED DATE ("+formatted+")";
 
 render("selected",formatted);
+}
+
+function renderTraining(){
+
+    let box = document.getElementById("trainingSection");
+    box.innerHTML = "";
+
+    let refDate;
+
+    let selectedVal = document.getElementById("datePicker").value;
+
+    if(selectedVal){
+        refDate = new Date(selectedVal);
+    } else {
+        refDate = new Date();
+    }
+
+    let month = ("0"+(refDate.getMonth()+1)).slice(-2);
+
+    let filtered = trainings.filter(t => {
+        if(!t.date) return false;
+
+        let first = t.date.split("to")[0].trim();
+        let parts = first.split("-");
+        return parts[1] === month;
+    });
+
+    if(filtered.length === 0){
+        box.innerHTML = `
+        <div style="text-align:center;color:#777;font-weight:bold;">
+        No training scheduled for the month yet
+        </div>`;
+        return;
+    }
+
+    filtered.forEach(t=>{
+        box.innerHTML += `
+        <div class="training-item">
+            <div class="training-date">${t.date}</div>
+            <div class="training-name">${t.name}</div>
+            <div class="training-type">${t.type}</div>
+        </div>
+        `;
+    });
 }
 
 function onNameChange(){
