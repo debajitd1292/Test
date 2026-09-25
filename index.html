@@ -9,17 +9,41 @@
 <meta name="theme-color" content="#0d47a1">
 
 <style>
-body { font-family: Arial; margin:0; background:#eef1f5; }
+:root {
+    --bg: #eef1f5;
+    --card: #ffffff;
+    --text: #000000;
+    --subtext: #555;
+    --header: #1f4e79;
+    --border: #ccc;
+}
+
+body.dark {
+    --bg: #121212;
+    --card: #1e1e1e;
+    --text: #e0e0e0;
+    --subtext: #aaaaaa;
+    --header: #0d47a1;
+    --border: #444;
+}
+body { 
+    font-family: Arial; 
+    margin:0; 
+    background: var(--bg);
+    color: var(--text);
+}
 
 .header {
-    background:#1f4e79;
+    background: var(--header);
     color:white;
     text-align:center;
     padding:15px 10px;
 
     position: sticky;
     top: 0;
-    z-index: 1000;        /* keeps it above everything */
+    z-index: 1000;
+
+    position: relative;   /* ✅ added */
 }
 
 .holiday-text {
@@ -42,6 +66,34 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
     transition:all 0.4s ease;       
 }
 
+#themeToggle {
+    position:absolute;        /* ✅ key change */
+    top:10px;                 /* distance from top */
+    right:10px;               /* distance from right */
+
+    padding:6px 10px;
+    font-size:16px;
+    border:none;
+    border-radius:50%;        /* circular button */
+    cursor:pointer;
+
+    background:#ffd600;
+    color:black;
+    font-weight:bold;
+
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    transition:0.3s;
+}
+
+#themeToggle:hover {
+    transform: scale(1.15);
+}
+
+body.dark #themeToggle {
+    background:#333;
+    color:#ffd600;
+}
+
 .badge {
     display:inline-block;
     background:#c2185b;
@@ -53,7 +105,7 @@ body { font-family: Arial; margin:0; background:#eef1f5; }
 }
 
 .card {
-    background:white;
+    background: var(--card);
     margin:10px;
     padding:12px;
     border-radius:12px;
@@ -67,8 +119,11 @@ input, select {
     padding:6px 10px;
     margin-top:6px;
     border-radius:8px;
-    border:1px solid #ccc;
+    border:1px solid var(--border);   /* ✅ changed */
     box-sizing:border-box;
+
+    background: var(--card);          /* ✅ added */
+    color: var(--text);               /* ✅ added */
 }
 
 select:focus, input:focus {
@@ -160,6 +215,10 @@ select:focus, input:focus {
      class="logo"
      onload="this.style.opacity=1; this.style.transform='scale(1)'">
     <h3>PPU Shift Schedule</h3>
+
+    <button id="themeToggle" onclick="toggleDarkMode()">
+        🌙
+    </button>
     <div id="todayDate"></div>
 
     <!-- ✅ ADDED NOTE HERE -->
@@ -391,7 +450,25 @@ return todaysNotes.map(n => {
 }).join("<br>");
 }
 
+function toggleDarkMode(){
+    document.body.classList.toggle("dark");
+
+    let isDark = document.body.classList.contains("dark");
+
+    document.getElementById("themeToggle").innerText = isDark ? "☀️" : "🌙";
+
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+}
+
 function init(){
+let savedTheme = localStorage.getItem("theme");
+
+if(savedTheme === "dark"){
+    document.body.classList.add("dark");
+    document.getElementById("themeToggle").innerText = "☀️";
+} else {
+    document.getElementById("themeToggle").innerText = "🌙";
+}
 document.getElementById("today").innerHTML = "Loading...";
 
 let dateElem = document.getElementById("todayDate");
