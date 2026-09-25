@@ -66,32 +66,67 @@ body {
     transition:all 0.4s ease;       
 }
 
-#themeToggle {
-    position:absolute;        /* ✅ key change */
-    top:10px;                 /* distance from top */
-    right:10px;               /* distance from right */
+.theme-switch {
+    position:absolute;
+    top:10px;
+    right:10px;
+}
 
-    padding:6px 10px;
-    font-size:16px;
-    border:none;
-    border-radius:50%;        /* circular button */
+/* Toggle container */
+.theme-switch {
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+/* Hide default checkbox */
+.theme-switch input {
+    display:none;
+}
+
+/* Slider background */
+.slider {
+    width:50px;
+    height:26px;
+    background:#3a4a5a;
+    border-radius:50px;
+    position:relative;
+    display:inline-block;
     cursor:pointer;
-
-    background:#ffd600;
-    color:black;
-    font-weight:bold;
-
-    box-shadow:0 2px 6px rgba(0,0,0,0.3);
     transition:0.3s;
 }
 
-#themeToggle:hover {
-    transform: scale(1.15);
+.slider::before {
+    content:"";
+    width:22px;
+    height:22px;
+    background:#90caf9;
+    border-radius:50%;
+    position:absolute;
+    top:2px;
+    left:2px;
+    transition:0.3s;
 }
 
-body.dark #themeToggle {
-    background:#333;
-    color:#ffd600;
+/* ON state */
+.theme-switch input:checked + .slider {
+    background:#90caf9;
+}
+
+/* Move knob */
+.theme-switch input:checked + .slider::before {
+    transform: translateX(24px);
+    background:#0d47a1;
+}
+
+/* ✅ ADD THESE BELOW */
+.theme-switch input:checked + .slider {
+    background:#90caf9;
+    box-shadow:0 0 8px #90caf9;
+}
+
+.slider:hover {
+    transform: scale(1.05);
 }
 
 .badge {
@@ -211,15 +246,15 @@ select:focus, input:focus {
 <body>
 
 <div class="header">
-    <img src="https://raw.githubusercontent.com/debajitd1292/Test/main/logo.png"
+    <img src="https://raw.githubusercontent.com/debajitd1292/ppu/main/logo.png"
      class="logo"
      onload="this.style.opacity=1; this.style.transform='scale(1)'">
     <h3>PPU Shift Schedule</h3>
 
-    <button id="themeToggle" onclick="toggleDarkMode()">
-        🌙
-    </button>
-    <div id="todayDate"></div>
+    <div class="theme-switch">
+        <input type="checkbox" id="themeToggle" onchange="toggleDarkMode()">
+        <label for="themeToggle" class="slider"></label>
+    </div>
 
     <!-- ✅ ADDED NOTE HERE -->
     <div id="todayNote" style="margin-top:5px;font-weight:bold;"></div>
@@ -266,10 +301,10 @@ select:focus, input:focus {
 
 <script>
 
-const shiftUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/shift.csv";
-const holidayUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/holiday.csv";
-const notesUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/notes.csv";
-const trainingUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/training.csv";
+const shiftUrl = "https://raw.githubusercontent.com/debajitd1292/ppu/main/shift.csv";
+const holidayUrl = "https://raw.githubusercontent.com/debajitd1292/ppu/main/holiday.csv";
+const notesUrl = "https://raw.githubusercontent.com/debajitd1292/ppu/main/notes.csv";
+const trainingUrl = "https://raw.githubusercontent.com/debajitd1292/ppu/main/training.csv";
 
 let data = [];
 let holidays = [];
@@ -451,13 +486,11 @@ return todaysNotes.map(n => {
 }
 
 function toggleDarkMode(){
-    document.body.classList.toggle("dark");
+    let toggle = document.getElementById("themeToggle");
 
-    let isDark = document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", toggle.checked);
 
-    document.getElementById("themeToggle").innerText = isDark ? "☀️" : "🌙";
-
-    localStorage.setItem("theme", isDark ? "dark" : "light");
+    localStorage.setItem("theme", toggle.checked ? "dark" : "light");
 }
 
 function init(){
@@ -465,10 +498,9 @@ let savedTheme = localStorage.getItem("theme");
 
 if(savedTheme === "dark"){
     document.body.classList.add("dark");
-    document.getElementById("themeToggle").innerText = "☀️";
-} else {
-    document.getElementById("themeToggle").innerText = "🌙";
+    document.getElementById("themeToggle").checked = true;
 }
+
 document.getElementById("today").innerHTML = "Loading...";
 
 let dateElem = document.getElementById("todayDate");
