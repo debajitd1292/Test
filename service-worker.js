@@ -1,4 +1,4 @@
-const CACHE_NAME = "ppu-test-cache-v10";
+const CACHE_NAME = "ppu-test-cache-v11";
 
 const ASSETS = [
   "./",
