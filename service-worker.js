@@ -1,11 +1,11 @@
-const CACHE_NAME = "ppu-dashboard-v10";
+const CACHE_NAME = "ppu-dashboard-v8";
 
 const urlsToCache = [
     "./",
     "./index.html",
     "./manifest.json",
     "./service-worker.js",
-    "https://raw.githubusercontent.com/debajitd1292/ppu/main/logo.png"
+    "https://raw.githubusercontent.com/debajitd1292/Test/main/logo.png"
 ];
 
 // INSTALL
@@ -41,13 +41,13 @@ self.addEventListener("fetch", event => {
 
     const url = event.request.url;
 
-    // ✅ Always fetch fresh CSV (dynamic data)
+    // Always fetch fresh CSV (dynamic data)
     if (url.includes(".csv")) {
         event.respondWith(fetch(event.request));
         return;
     }
 
-    // ✅ Navigation fallback
+    // Navigation fallback
     if (event.request.mode === "navigate") {
         event.respondWith(
             fetch(event.request).catch(() => caches.match("./index.html"))
@@ -55,7 +55,7 @@ self.addEventListener("fetch", event => {
         return;
     }
 
-    // ✅ Cache-first for static assets
+    // Cache-first for static assets
     event.respondWith(
         caches.match(event.request).then(cached => {
 
