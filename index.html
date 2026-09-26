@@ -730,7 +730,7 @@ if(header.indexOf(date)===-1){
         ? "Shift schedule is not available for today"
         : "Shift schedule is not available for the selected date";
 
-    box.innerHTML = `<div style="color:red;font-weight:bold;">
+    box.innerHTML = `<div style="color:#777;font-weight:bold;">
     ${msg}
     </div>`;
 
@@ -816,7 +816,7 @@ function renderTraining(){
 
     if(filtered.length === 0){
         box.innerHTML = `
-        <div style="text-align:center;color:#777;font-weight:bold;">
+        <div style="color:#777;font-weight:bold;">
         No training scheduled for the month yet
         </div>`;
         return;
