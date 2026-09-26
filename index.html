@@ -135,25 +135,25 @@ select:focus, input:focus {
 
 .next7-container {
     display:flex;
-    overflow-x:auto;
-    gap:12px;
-    padding:10px;
+    justify-content:space-between;
+    gap:4px;
+    padding:6px 8px;
 }
 
 .day-card {
-    min-width:65px;
+    flex:1;
     text-align:center;
 }
 
 .day-date {
-    font-size:13px;
-    margin-bottom:6px;
+    font-size:10px;
+    margin-bottom:3px;
     font-weight:bold;
 }
 
 .day-shift {
-    width:34px;
-    height:34px;
+    width:28px;
+    height:28px;
     border-radius:50%;
     display:flex;
     align-items:center;
@@ -861,7 +861,7 @@ function renderTraining(){
     // --- styling ---
     let style = "";
     if(isPast){
-        style = "opacity:0.8;";
+        style = "opacity:0.6;";
     }
 
     box.innerHTML += `
@@ -905,13 +905,17 @@ function renderNext7Days(){
 
         let dateStr = `${dd}-${mm}-${yyyy}`;
 
-        let shift = getShift(dateStr, selectedName) || "-";
+        let rawShift = getShift(dateStr, selectedName) || "-";
+
+        let shiftClass = rawShift === "OFF" ? "OFF" : (rawShift.match(/[A-Z]/)?.[0] || "");
+
+        let shiftText = rawShift;
 
         html += `
         <div class="day-card">
             <div class="day-date">${dd}</div>
-            <div class="day-shift ${shift}">
-                ${shift}
+            <div class="day-shift ${shiftClass}">
+                ${shiftText}
             </div>
         </div>
         `;
@@ -958,7 +962,7 @@ function calcHoliday(){
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js?v=8')
+  navigator.serviceWorker.register('./service-worker.js?v=9')
     .then(() => console.log("Service Worker Registered"));
 }
 
