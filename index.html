@@ -411,7 +411,7 @@ body.dark .badge {
 
 <script>
 
-const DATA_VERSION = "v17";   // 🔁 update when CSV changes
+const DATA_VERSION = "v18";   // 🔁 update when CSV changes
 
 const shiftUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/shift.csv?v=" + DATA_VERSION;
 const holidayUrl = "https://raw.githubusercontent.com/debajitd1292/Test/main/holiday.csv?v=" + DATA_VERSION;
@@ -1059,7 +1059,7 @@ function calcHoliday(){
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js?v=17')
+  navigator.serviceWorker.register('./service-worker.js?v=18')
     .then(() => console.log("Service Worker Registered"));
 }
 
