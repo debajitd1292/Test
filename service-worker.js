@@ -1,4 +1,4 @@
-const CACHE_NAME = "ppu-dashboard-v16";
+const CACHE_NAME = "ppu-dashboard-v17";
 
 const urlsToCache = [
     "./",
